@@ -1910,6 +1910,59 @@ class Tx_Seminars_Tests_Unit_FrontEnd_DefaultControllerTest extends TestCase
         );
     }
 
+    /**
+     * @test
+     */
+    public function singleViewContainsEncodedTimeSlotPlaceTitle()
+    {
+        $placeTitle = 'A grand & inviting place';
+        $placeUid = $this->testingFramework->createRecord('tx_seminars_sites', ['title' => $placeTitle]);
+        $this->testingFramework->createRecord(
+            'tx_seminars_timeslots',
+            ['seminar' => $this->seminarUid, 'place' => $placeUid]
+        );
+        $this->testingFramework->changeRecord(
+            'tx_seminars_seminars',
+            $this->seminarUid,
+            ['timeslots' => 1, 'place' => 1]
+        );
+
+        $this->subject->setConfigurationValue('what_to_display', 'single_view');
+        $this->subject->piVars['showUid'] = $this->seminarUid;
+        $result = $this->subject->main('', []);
+
+        self::assertContains('<dt>' . \htmlspecialchars($placeTitle, ENT_QUOTES | ENT_HTML5) . '</dt>', $result);
+    }
+
+    /**
+     * @test
+     */
+    public function singleViewContainsTimeSlotPlaceTitleWithoutDuplications()
+    {
+        $placeTitle = 'Waldhütte';
+        $placeUid = $this->testingFramework->createRecord('tx_seminars_sites', ['title' => $placeTitle]);
+        $this->testingFramework->createRecord(
+            'tx_seminars_timeslots',
+            ['seminar' => $this->seminarUid, 'place' => $placeUid]
+        );
+        $this->testingFramework->createRecord(
+            'tx_seminars_timeslots',
+            ['seminar' => $this->seminarUid, 'place' => $placeUid]
+        );
+        $this->testingFramework->changeRecord(
+            'tx_seminars_seminars',
+            $this->seminarUid,
+            ['timeslots' => 2, 'place' => 1]
+        );
+
+        $this->subject->setConfigurationValue('what_to_display', 'single_view');
+        $this->subject->piVars['showUid'] = $this->seminarUid;
+        $result = $this->subject->main('', []);
+
+        self::assertContains('asdfa', $result);
+        self::assertSame(1, \substr_count($result, '<dt>' . $placeTitle . '</dt>'));
+    }
+
     public function testTimeSlotsSubpartIsVisibleInSingleViewWithTwoTimeSlots()
     {
         $this->subject->setConfigurationValue('what_to_display', 'single_view');
